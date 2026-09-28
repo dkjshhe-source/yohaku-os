@@ -1,13 +1,15 @@
 {
   "name": "reel-hook-analyzer",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify": "tsx scripts/verify-core.ts",
+    "e2e": "tsx scripts/e2e-check.ts"
   },
   "dependencies": {
     "react": "^19.2.8",
@@ -19,6 +21,8 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
+    "playwright": "^1.63.0",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"
   }

@@ -25,6 +25,12 @@ npm run build
 npm run preview
 ```
 
+コアロジック検証:
+
+```bash
+npm run verify
+```
+
 ## 主な機能
 
 - リール登録（URL任意）・編集・削除
