@@ -58,7 +58,7 @@ export function PostList({ posts, onOpen, onNew, onCompare, onData }: Props) {
           <p className="brand">Reel Hook Analyzer</p>
           <h1>投稿一覧</h1>
           <p className="lede">
-            Instagramリールのフックと離脱ポイントを、手入力データから整理します。外部へは送信しません。
+            Instagramリールのフックと離脱ポイントを、手入力データから整理します。投稿データは接続中のサーバーに保存されます。
           </p>
         </div>
         <div className="header-actions">

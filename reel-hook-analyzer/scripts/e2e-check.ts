@@ -185,8 +185,14 @@ async function main() {
   await page.getByRole('button', { name: '一覧へ' }).click();
   await page.getByRole('button', { name: 'データ' }).click();
   const dataText = await page.locator('.page').innerText();
-  assert(dataText.includes('localStorage'), 'storage explained');
-  assert(dataText.includes('外部サーバーへは送信しません'), 'no external send');
+  assert(
+    dataText.includes('サーバー') || dataText.includes('localStorage'),
+    'storage explained',
+  );
+  assert(
+    dataText.includes('Instagram') || dataText.includes('ブラウザ内'),
+    'privacy note present',
+  );
   await shot(page, '09_data_panel');
 
   // export download

@@ -17,6 +17,7 @@ npm run dev
 ```
 
 ブラウザで表示された URL（通常 `http://localhost:5173`）を開きます。
+`npm run dev` は API サーバー（`:8787`）と Vite（`:5173`）を同時に起動します。投稿データは `data/posts.json` に保存されます。
 
 本番ビルド確認:
 

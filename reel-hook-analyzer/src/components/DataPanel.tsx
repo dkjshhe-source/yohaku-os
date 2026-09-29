@@ -13,12 +13,19 @@ import {
 
 interface Props {
   posts: ReelPost[];
+  storageMode?: 'server' | 'local';
   onReplacePosts: (posts: ReelPost[]) => void;
   onClearAll: () => void;
   onBack: () => void;
 }
 
-export function DataPanel({ posts, onReplacePosts, onClearAll, onBack }: Props) {
+export function DataPanel({
+  posts,
+  storageMode = 'local',
+  onReplacePosts,
+  onClearAll,
+  onBack,
+}: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [mode, setMode] = useState<ImportMode>('skip');
@@ -80,10 +87,18 @@ export function DataPanel({ posts, onReplacePosts, onClearAll, onBack }: Props) 
 
       <section className="section">
         <h2>保存場所とデータの扱い</h2>
-        <p>
-          データはこのブラウザの localStorage にのみ保存されます。外部サーバーへは送信しません。
-          端末・ブラウザを変えると共有されません。バックアップはエクスポートをご利用ください。
-        </p>
+        {storageMode === 'server' ? (
+          <p>
+            データはこのアプリのサーバー（同一プロジェクト内の JSON ファイル）に保存されます。
+            ブラウザやURLが変わっても、同じサーバーに繋がっていれば同じデータが見られます。
+            Instagram など外部サービスへは送信しません。バックアップ用にエクスポートもできます。
+          </p>
+        ) : (
+          <p>
+            いまはサーバーに繋がっていないため、このブラウザ内（localStorage）に保存しています。
+            サーバー起動後に再読み込みすると、サーバー保存に切り替わります。
+          </p>
+        )}
         <p className="muted">登録件数: {posts.length}</p>
       </section>
 

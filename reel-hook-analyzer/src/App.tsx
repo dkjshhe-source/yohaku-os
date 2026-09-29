@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AppData, ReelPost, View } from './types';
-import { loadData, saveData } from './lib/storage';
+import { saveData as saveLocal } from './lib/storage';
+import { bootstrapData, saveServerData, type StorageMode } from './lib/api';
 import { PostForm, PostList } from './components/PostList';
 import { PostDetail } from './components/PostDetail';
 import { CompareView } from './components/CompareView';
@@ -8,13 +9,64 @@ import { DataPanel } from './components/DataPanel';
 import './index.css';
 
 export default function App() {
-  const [data, setData] = useState<AppData>(() => loadData());
+  const [data, setData] = useState<AppData>({ version: 1, posts: [] });
   const [view, setView] = useState<View>({ name: 'list' });
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [mode, setMode] = useState<StorageMode>('loading');
+  const [statusMsg, setStatusMsg] = useState('サーバーに接続しています…');
+  const [saveError, setSaveError] = useState('');
+  const readyRef = useRef(false);
+  const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    saveData(data);
-  }, [data]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await bootstrapData();
+        if (cancelled) return;
+        setData(result.data);
+        setMode(result.mode);
+        if (result.error) {
+          setStatusMsg(result.error);
+        } else if (result.migrated) {
+          setStatusMsg('ブラウザ内のデータをサーバーへ移行しました。');
+        } else {
+          setStatusMsg(
+            result.mode === 'server'
+              ? 'サーバーに保存しています（端末を変えても同じデータが見られます）。'
+              : 'ブラウザ内保存です。',
+          );
+        }
+        readyRef.current = true;
+      } catch (e) {
+        if (cancelled) return;
+        setMode('error');
+        setStatusMsg(e instanceof Error ? e.message : '接続に失敗しました');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!readyRef.current) return;
+    saveLocal(data);
+    if (mode !== 'server') return;
+
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      void saveServerData(data)
+        .then(() => setSaveError(''))
+        .catch((e) =>
+          setSaveError(e instanceof Error ? e.message : 'サーバー保存に失敗しました'),
+        );
+    }, 250);
+
+    return () => {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    };
+  }, [data, mode]);
 
   const upsert = (post: ReelPost) => {
     setData((d) => {
@@ -47,10 +99,35 @@ export default function App() {
       ? data.posts.find((p) => p.id === (view.name === 'detail' ? view.postId : view.postId))
       : undefined;
 
+  if (mode === 'loading') {
+    return (
+      <div className="app-shell">
+        <div className="bg-atmosphere" aria-hidden="true" />
+        <main className="app-main">
+          <div className="empty-state">
+            <p className="brand">Reel Hook Analyzer</p>
+            <p>{statusMsg}</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
       <div className="bg-atmosphere" aria-hidden="true" />
       <main className="app-main">
+        <div
+          className={`callout ${mode === 'server' ? 'callout-ok' : 'callout-warn'}`}
+          style={{ marginBottom: '1rem' }}
+        >
+          <p>
+            保存先: {mode === 'server' ? 'サーバー（JSONファイル）' : 'このブラウザ内のみ'}
+            {statusMsg ? ` — ${statusMsg}` : ''}
+          </p>
+          {saveError && <p>{saveError}</p>}
+        </div>
+
         {view.name === 'list' && (
           <PostList
             posts={data.posts}
@@ -109,6 +186,7 @@ export default function App() {
         {view.name === 'data' && (
           <DataPanel
             posts={data.posts}
+            storageMode={mode === 'server' ? 'server' : 'local'}
             onReplacePosts={(posts) => setData({ version: 1, posts })}
             onClearAll={() => setData({ version: 1, posts: [] })}
             onBack={() => setView({ name: 'list' })}
